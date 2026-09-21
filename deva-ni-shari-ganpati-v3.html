@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Deva Ni Shari Cha Maharaja — Ganpati Collection</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rozha+One&family=Karla:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+<style>
+  :root{
+    --bg: #FBF3E7; --paper: #FFFDF9; --maroon: #6B1E2B; --maroon-dark: #4A1420;
+    --vermilion: #C1440E; --gold: #D9A441; --gold-light: #F0D9A8; --green: #1F4D3D;
+    --text: #2B1B12; --muted: #8A7360; --line: #E4D5BE;
+    --paid: #2E7D4F; --partial: #C1900E; --pending: #B23A2E;
+    font-family: 'Karla', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{ margin:0; background:radial-gradient(circle at 15% 0%, #f6e6c8 0%, transparent 45%), var(--bg); color:var(--text); min-height:100vh; }
+  h1,h2,h3{ font-family:'Rozha One', serif; font-weight:400; }
+  ::selection{ background:var(--gold-light); }
+
+  #setupNotice{ display:none; max-width:560px; margin:60px auto; background:var(--paper); border:1.5px solid var(--vermilion); border-radius:16px; padding:28px; }
+  #setupNotice h2{ color:var(--vermilion); font-size:1.2rem; margin-top:0; }
+  #setupNotice code{ background:#f4e9d8; padding:1px 5px; border-radius:4px; font-size:0.85rem; }
+  #setupNotice ol{ padding-left:20px; font-size:0.9rem; line-height:1.6; }
+
+  #loginScreen{ min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; }
+  .login-card{ background:var(--paper); border:1px solid var(--line); border-radius:18px; padding:40px 32px; max-width:380px; width:100%; text-align:center; box-shadow:0 20px 60px -20px rgba(107,30,43,0.25); }
+  .login-card .logo-wrap{ width:76px; height:76px; margin:0 auto 14px; }
+  .login-card h1{ font-size:1.5rem; color:var(--maroon); margin:0 0 2px; line-height:1.25; }
+  .login-card p.sub{ color:var(--muted); margin:0 0 22px; font-size:0.92rem; }
+  .field-solo{ margin-bottom:12px; text-align:left; }
+  .field-solo label{ display:block; font-size:0.78rem; color:var(--muted); margin-bottom:4px; font-weight:600; }
+  .text-input{ width:100%; padding:12px 14px; border-radius:10px; border:1.5px solid var(--line); font-size:0.98rem; background:#fff; color:var(--text); font-family:'Karla',sans-serif; }
+  .text-input:focus{ outline:none; border-color:var(--vermilion); }
+  .btn{ appearance:none; border:none; cursor:pointer; font-family:'Karla',sans-serif; font-weight:600; border-radius:10px; padding:12px 18px; font-size:0.95rem; transition:transform .12s ease, background .15s ease; }
+  .btn:active{ transform:scale(0.97); }
+  .btn-primary{ background:var(--vermilion); color:#fff; width:100%; }
+  .btn-primary:hover{ background:#a83a0c; }
+  .btn-ghost{ background:transparent; color:var(--maroon); border:1.5px solid var(--line); }
+  .btn-ghost:hover{ border-color:var(--maroon); }
+  .login-error{ color:var(--pending); font-size:0.85rem; min-height:18px; margin:6px 0; }
+  .login-alt{ margin-top:16px; font-size:0.83rem; color:var(--muted); }
+  .login-alt a{ color:var(--vermilion); cursor:pointer; text-decoration:underline; }
+
+  #app{ display:none; max-width:960px; margin:0 auto; padding:28px 20px 80px; }
+  header.hero{ display:flex; align-items:center; gap:18px; padding:8px 4px 26px; border-bottom:1px solid var(--line); margin-bottom:26px; }
+  .logo-wrap svg{ width:100%; height:100%; display:block; }
+  header.hero .titles{ flex:1; min-width:0; }
+  header.hero h1{ font-size:1.9rem; color:var(--maroon); margin:0 0 4px; line-height:1.15; }
+  header.hero .grp-sub{ margin:0; color:var(--vermilion); font-weight:600; font-size:0.95rem; }
+  header.hero .grp-tag{ margin:2px 0 0; color:var(--muted); font-size:0.85rem; }
+  .who{ font-size:0.72rem; color:var(--muted); margin-top:4px; }
+  .logout-btn{ background:none; border:1.5px solid var(--line); color:var(--muted); padding:8px 14px; border-radius:9px; font-size:0.82rem; cursor:pointer; font-family:'Karla',sans-serif; }
+  .logout-btn:hover{ border-color:var(--maroon); color:var(--maroon); }
+
+  .countdown-band{ background:linear-gradient(135deg, var(--maroon) 0%, var(--maroon-dark) 100%); border-radius:16px; padding:22px 24px; color:#fdf6ea; display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:20px; }
+  .countdown-band .label{ font-size:0.85rem; color:var(--gold-light); }
+  .countdown-band .date{ font-family:'Rozha One',serif; font-size:1.3rem; margin-top:2px; }
+  .countdown-nums{ display:flex; gap:14px; }
+  .countdown-nums .unit{ text-align:center; min-width:56px; }
+  .countdown-nums .unit .n{ font-family:'Rozha One',serif; font-size:1.7rem; display:block; color:#fff; }
+  .countdown-nums .unit .u{ font-size:0.7rem; color:var(--gold-light); }
+
+  .cal-strip{ background:var(--paper); border:1px solid var(--line); border-radius:16px; padding:18px 20px; margin-bottom:26px; }
+  .cal-strip h3{ margin:0 0 4px; font-size:1.05rem; color:var(--maroon); }
+  .cal-strip .cal-note{ margin:0 0 14px; font-size:0.8rem; color:var(--muted); }
+  .cal-days{ display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; }
+  .cal-day{ flex:0 0 auto; width:74px; border-radius:11px; border:1px solid var(--line); padding:9px 6px; text-align:center; background:#fff; }
+  .cal-day.marker{ border-color:var(--gold); background:#FBF0DC; }
+  .cal-day.today{ border-color:var(--vermilion); box-shadow:0 0 0 2px rgba(193,68,14,0.15); }
+  .cal-day .dow{ font-size:0.68rem; color:var(--muted); }
+  .cal-day .dnum{ font-family:'Rozha One',serif; font-size:1.15rem; margin:2px 0; color:var(--text); }
+  .cal-day .tag{ font-size:0.6rem; color:var(--vermilion); font-weight:700; }
+
+  .summary-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px; margin-bottom:30px; }
+  .sum-card{ background:var(--paper); border:1px solid var(--line); border-radius:14px; padding:16px; }
+  .sum-card .val{ font-family:'Rozha One',serif; font-size:1.4rem; color:var(--maroon); }
+  .sum-card .lbl{ font-size:0.76rem; color:var(--muted); margin-top:2px; }
+  .sum-card.accent{ background:var(--green); }
+  .sum-card.accent .val, .sum-card.accent .lbl{ color:#eef7f1; }
+  .sum-card.warn .val{ color:var(--pending); }
+  .sum-card.net .val{ color:var(--maroon); }
+
+  .tabs{ display:flex; gap:8px; margin-bottom:18px; border-bottom:1px solid var(--line); }
+  .tab-btn{ background:none; border:none; font-family:'Karla',sans-serif; font-weight:700; font-size:0.92rem; color:var(--muted); padding:10px 4px; cursor:pointer; border-bottom:2.5px solid transparent; margin-bottom:-1px; }
+  .tab-btn.active{ color:var(--maroon); border-bottom-color:var(--vermilion); }
+  .tab-panel{ display:none; }
+  .tab-panel.active{ display:block; }
+
+  .section-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; gap:10px; flex-wrap:wrap; }
+  .section-head h2{ font-size:1.2rem; color:var(--maroon); margin:0; }
+  .head-actions{ display:flex; gap:8px; }
+  .btn-small{ padding:9px 14px; font-size:0.85rem; }
+  .btn-add{ background:var(--vermilion); color:#fff; }
+  .btn-add:hover{ background:#a83a0c; }
+  .btn-export{ background:var(--green); color:#fff; }
+  .btn-export:hover{ background:#173d31; }
+
+  .member-card{ background:var(--paper); border:1px solid var(--line); border-radius:14px; padding:16px; margin-bottom:10px; display:flex; gap:14px; align-items:flex-start; flex-wrap:wrap; }
+  .member-main{ flex:1; min-width:180px; }
+  .member-main .nm{ font-weight:700; font-size:1.02rem; }
+  .member-main .contact{ font-size:0.8rem; color:var(--muted); margin-top:2px; }
+  .member-money{ text-align:right; min-width:130px; }
+  .member-money .amt{ font-family:'Rozha One',serif; font-size:1.15rem; }
+  .member-money .of{ font-size:0.75rem; color:var(--muted); }
+  .member-money .bal{ font-size:0.78rem; font-weight:700; margin-top:2px; }
+  .member-money .bal.due{ color:var(--pending); }
+  .member-money .bal.clear{ color:var(--paid); }
+  .status-pill{ display:inline-block; margin-top:5px; padding:3px 10px; border-radius:20px; font-size:0.7rem; font-weight:700; }
+  .status-pill.paid{ background:#E4F3E9; color:var(--paid); }
+  .status-pill.partial{ background:#FBF0DC; color:var(--partial); }
+  .status-pill.pending{ background:#FBE7E4; color:var(--pending); }
+  .member-actions{ display:flex; gap:6px; flex-wrap:wrap; width:100%; margin-top:10px; padding-top:10px; border-top:1px dashed var(--line); }
+  .icon-btn{ display:flex; align-items:center; gap:5px; background:#fff; border:1px solid var(--line); color:var(--text); padding:7px 10px; border-radius:8px; font-size:0.78rem; cursor:pointer; text-decoration:none; font-family:'Karla',sans-serif; }
+  .icon-btn:hover{ border-color:var(--vermilion); color:var(--vermilion); }
+  .icon-btn.danger:hover{ border-color:var(--pending); color:var(--pending); }
+  .empty-state{ text-align:center; padding:40px 20px; color:var(--muted); background:var(--paper); border:1px dashed var(--line); border-radius:14px; }
+
+  .expense-row{ background:var(--paper); border:1px solid var(--line); border-radius:14px; padding:14px 16px; margin-bottom:9px; display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+  .expense-main{ flex:1; min-width:160px; }
+  .expense-main .et{ font-weight:700; }
+  .expense-main .ed{ font-size:0.78rem; color:var(--muted); margin-top:2px; }
+  .expense-amt{ font-family:'Rozha One',serif; font-size:1.1rem; color:var(--pending); }
+  .expense-acts{ display:flex; gap:6px; }
+
+  .activity-row{ background:var(--paper); border:1px solid var(--line); border-radius:12px; padding:12px 16px; margin-bottom:8px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .activity-row.undone{ opacity:0.5; }
+  .activity-main{ flex:1; min-width:200px; }
+  .activity-main .at{ font-size:0.72rem; color:var(--muted); }
+  .activity-main .desc{ font-size:0.88rem; margin-top:2px; }
+  .activity-main .desc b{ color:var(--maroon); }
+  .activity-tag{ font-size:0.66rem; font-weight:700; padding:2px 8px; border-radius:20px; background:#F0D9A8; color:var(--maroon-dark); text-transform:uppercase; }
+
+  .modal-backdrop{ position:fixed; inset:0; background:rgba(43,27,18,0.45); display:none; align-items:center; justify-content:center; padding:16px; z-index:50; }
+  .modal-backdrop.open{ display:flex; }
+  .modal{ background:var(--paper); border-radius:16px; padding:26px; max-width:420px; width:100%; max-height:90vh; overflow-y:auto; }
+  .modal h3{ margin:0 0 16px; color:var(--maroon); }
+  .field{ margin-bottom:13px; }
+  .field label{ display:block; font-size:0.8rem; color:var(--muted); margin-bottom:5px; font-weight:600; }
+  .field input{ width:100%; padding:10px 12px; border:1.5px solid var(--line); border-radius:9px; font-size:0.95rem; font-family:'Karla',sans-serif; background:#fff; color:var(--text); }
+  .field input:focus{ outline:none; border-color:var(--vermilion); }
+  .field-row{ display:flex; gap:10px; }
+  .field-row .field{ flex:1; }
+  .modal-actions{ display:flex; gap:10px; margin-top:18px; }
+  .modal-actions .btn{ flex:1; }
+
+  footer.foot{ text-align:center; color:var(--muted); font-size:0.78rem; margin-top:36px; }
+  footer.foot .om{ color:var(--gold); font-size:1.1rem; margin-bottom:4px; }
+  .sync-note{ font-size:0.72rem; color:var(--muted); text-align:center; margin-top:6px; }
+
+  /* ---------- Phone screens ---------- */
+  @media (max-width: 600px){
+    #app{ padding:18px 14px 60px; }
+    header.hero{ flex-wrap:wrap; gap:12px; padding:6px 2px 18px; }
+    header.hero h1{ font-size:1.4rem; }
+    header.hero .grp-tag{ display:none; }
+    .logo-wrap{ width:50px !important; height:50px !important; }
+    .logout-btn{ margin-left:auto; }
+    .countdown-band{ padding:16px 16px; }
+    .countdown-nums{ gap:8px; width:100%; justify-content:space-between; }
+    .countdown-nums .unit{ min-width:0; flex:1; }
+    .countdown-nums .unit .n{ font-size:1.3rem; }
+    .summary-grid{ grid-template-columns:repeat(2,1fr); }
+    .sum-card{ padding:12px; }
+    .sum-card .val{ font-size:1.15rem; }
+    .member-card, .expense-row{ padding:13px; }
+    .member-money{ text-align:left; min-width:0; width:100%; margin-top:6px; padding-top:8px; border-top:1px dashed var(--line); display:flex; align-items:baseline; gap:8px; }
+    .member-money .bal{ margin-top:0; margin-left:auto; }
+    .modal{ padding:20px; }
+    .field-row{ flex-direction:column; gap:0; }
+    .cal-day{ width:64px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="setupNotice">
+  <h2>One-time setup needed</h2>
+  <p>Your Firebase config is already in this file. Two things still need doing in the Firebase console before it works:</p>
+  <ol>
+    <li><b>Build → Authentication → Email/Password → Enable.</b></li>
+    <li><b>Build → Firestore Database → Create database</b> (production mode), then in the <b>Rules</b> tab paste the rules block shown near <code>ADMIN_EMAILS</code> in this file's code, swap in your 2 real admin emails, and Publish.</li>
+    <li>Back in <b>Authentication → Users → Add user</b>, manually create the 2 admin accounts (same 2 emails) with a password each. Do this here rather than via the site's sign-up, so only your 2 people ever get in.</li>
+  </ol>
+</div>
+
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="logo-wrap"><svg viewBox="0 0 100 100"><use href="#ganpatiLogo"/></svg></div>
+    <h1>Admin Sign In</h1>
+    <p class="sub">Deva Ni Shari Cha Maharaja — collection dashboard</p>
+    <div class="field-solo"><label>Email</label><input type="email" class="text-input" id="authEmail" placeholder="you@email.com"></div>
+    <div class="field-solo"><label>Password</label><input type="password" class="text-input" id="authPassword" placeholder="Your password"></div>
+    <div class="login-error" id="loginError"></div>
+    <button class="btn btn-primary" id="signInBtn">Sign In</button>
+    <div class="login-alt"><a id="forgotLink">Forgot password?</a></div>
+  </div>
+</div>
+
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="ganpatiLogo" viewBox="0 0 100 100">
+    <line x1="24" y1="6" x2="24" y2="94" stroke="#D9A441" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="24" cy="6" r="3.4" fill="#D9A441"/>
+    <path d="M24,14 L86,22 C74,27 68,31 68,36 C68,41 74,45 86,50 L24,42 Z" fill="#C1440E"/>
+  </symbol>
+</svg>
+
+<div id="app">
+  <header class="hero">
+    <div class="logo-wrap" style="width:64px;height:64px;flex-shrink:0;"><svg viewBox="0 0 100 100"><use href="#ganpatiLogo"/></svg></div>
+    <div class="titles">
+      <h1>Deva Ni Shari Cha Maharaja</h1>
+      <p class="grp-sub">Ganpati Utsav — Vargani &amp; Kharch</p>
+      <p class="grp-tag">Ganpati Bappa Morya! Track collection and expenses in one place.</p>
+      <p class="who" id="whoAmI"></p>
+    </div>
+    <button class="logout-btn" id="logoutBtn">Sign Out</button>
+  </header>
+
+  <div id="globalError" style="display:none; background:#FBE7E4; border:1.5px solid var(--pending); color:var(--pending); border-radius:12px; padding:14px 16px; margin-bottom:20px; font-size:0.88rem; font-weight:600;"></div>
+
+  <div class="countdown-band">
+    <div><div class="label">Next Ganpati Sthapana</div><div class="date" id="cdDate">—</div></div>
+    <div class="countdown-nums" id="cdNums"></div>
+  </div>
+
+  <div class="cal-strip">
+    <h3>Ganeshotsav 2026 — 10 Day Calendar</h3>
+    <p class="cal-note">Sthapana on 14 Sep, festival runs 10 days. Local Visarjan day may vary — confirm with your panchang.</p>
+    <div class="cal-days" id="calDays"></div>
+  </div>
+
+  <div class="summary-grid" id="summaryGrid"></div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="members">Members</button>
+    <button class="tab-btn" data-tab="expenses">Expenses</button>
+    <button class="tab-btn" data-tab="activity" id="activityTabBtn">🔒 Activity Log</button>
+  </div>
+
+  <div class="tab-panel active" id="panel-members">
+    <div class="section-head">
+      <h2>Members</h2>
+      <div class="head-actions">
+        <button class="btn btn-small btn-export" id="exportBtn">⭳ Export to Excel</button>
+        <button class="btn btn-small btn-add" id="addBtn">+ Add Member</button>
+      </div>
+    </div>
+    <div id="memberList"></div>
+  </div>
+
+  <div class="tab-panel" id="panel-expenses">
+    <div class="section-head">
+      <h2>Expenses</h2>
+      <div class="head-actions">
+        <button class="btn btn-small btn-export" id="exportExpBtn">⭳ Export to Excel</button>
+        <button class="btn btn-small btn-add" id="addExpBtn">+ Add Expense</button>
+      </div>
+    </div>
+    <div id="expenseList"></div>
+  </div>
+
+  <div class="tab-panel" id="panel-activity">
+    <div class="section-head">
+      <h2>Activity Log</h2>
+    </div>
+    <p class="cal-note" style="margin-bottom:14px;">Every add, edit, and delete by either admin is recorded here. Undo reverses just that one change.</p>
+    <div id="activityList"></div>
+  </div>
+
+  <p class="sync-note" id="syncNote"></p>
+  <footer class="foot"><div class="om">ॐ</div>Ganpati Bappa Morya, Pudhchya Varshi Lavkar Ya</footer>
+</div>
+
+<!-- Member modal -->
+<div class="modal-backdrop" id="memberModal">
+  <div class="modal">
+    <h3 id="modalTitle">Add Member</h3>
+    <input type="hidden" id="memberId">
+    <div class="field"><label>Full Name</label><input type="text" id="fName" placeholder="e.g. Rakesh Patel"></div>
+    <div class="field-row">
+      <div class="field"><label>Phone (with country code)</label><input type="text" id="fPhone" placeholder="9198xxxxxxx"></div>
+      <div class="field"><label>Email (optional)</label><input type="email" id="fEmail" placeholder="name@email.com"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Pledged Amount (₹)</label><input type="number" id="fPledged" placeholder="1100"></div>
+      <div class="field"><label>Amount Paid (₹)</label><input type="number" id="fPaid" placeholder="0"></div>
+    </div>
+    <div class="login-error" id="memberFormError"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="cancelBtn">Cancel</button>
+      <button class="btn btn-primary" id="saveBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Expense modal -->
+<div class="modal-backdrop" id="expenseModal">
+  <div class="modal">
+    <h3 id="expModalTitle">Add Expense</h3>
+    <input type="hidden" id="expId">
+    <div class="field"><label>Title</label><input type="text" id="eTitle" placeholder="e.g. Mandap decoration"></div>
+    <div class="field-row">
+      <div class="field"><label>Amount (₹)</label><input type="number" id="eAmount" placeholder="5000"></div>
+      <div class="field"><label>Date</label><input type="date" id="eDate"></div>
+    </div>
+    <div class="field"><label>Category (optional)</label><input type="text" id="eCategory" placeholder="e.g. Decoration, Prasad, Lighting"></div>
+    <div class="field"><label>Notes (optional)</label><input type="text" id="eNotes" placeholder="Paid to / any note"></div>
+    <div class="login-error" id="expenseFormError"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="expCancelBtn">Cancel</button>
+      <button class="btn btn-primary" id="expSaveBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Developer password gate for Activity Log -->
+<div class="modal-backdrop" id="devGateModal">
+  <div class="modal" style="max-width:340px; text-align:center;">
+    <h3>Developer Access</h3>
+    <p class="cal-note" style="margin-bottom:14px;">The Activity Log is developer-only. Enter the password to view it.</p>
+    <input type="password" class="text-input" id="devPassField" placeholder="Developer password" style="margin-bottom:8px;">
+    <div class="login-error" id="devGateError"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="devGateCancel">Cancel</button>
+      <button class="btn btn-primary" id="devGateSubmit">Unlock</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =========================================================================
+   FIREBASE CONFIG — already filled in with your project.
+   ========================================================================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyBzOyzD37G_lcwciyiv3jLzodKesghuwk8",
+  authDomain: "deva-ni-shari-cha-mahara-6beb5.firebaseapp.com",
+  projectId: "deva-ni-shari-cha-mahara-6beb5",
+  storageBucket: "deva-ni-shari-cha-mahara-6beb5.firebasestorage.app",
+  messagingSenderId: "79960129914",
+  appId: "1:79960129914:web:5ed88f3ecc96773e1056c3",
+  measurementId: "G-FG7SQ4H43B"
+};
+
+/* =========================================================================
+   ADMIN LIST — only these 2 emails can ever sign in. Replace with your
+   2 real admin emails, then create those 2 accounts yourself in Firebase
+   console → Authentication → Users → Add user (don't use self sign-up).
+   ========================================================================= */
+const ADMIN_EMAILS = ["samarthbaxi2156@gmail.com", "ppatelnity@gmail.com"];
+
+/* =========================================================================
+   DEVELOPER PASSWORD — set your own password here. Only someone who knows
+   this can open the Activity Log tab, even though they're already a signed
+   in admin. This check happens in the browser only (see note below the
+   tab-lock code for what that does and doesn't protect against).
+   ========================================================================= */
+const DEVELOPER_PASSWORD = "changeme123";
+
+/* =========================================================================
+   FIRESTORE SECURITY RULES — paste into Firebase console → Firestore
+   Database → Rules tab → Publish. Replace the 2 emails to match above.
+   This is what actually enforces the 2-admin restriction (the JS check
+   below is just a friendlier message — the rule is the real lock).
+   ---------------------------------------------------------------------
+   rules_version = '2';
+   service cloud.firestore {
+     match /databases/{database}/documents {
+       match /groups/deva-ni-shari-cha-maharaja/{document=**} {
+         allow read, write: if request.auth != null &&
+           request.auth.token.email in ['admin1@example.com','admin2@example.com'];
+       }
+     }
+   }
+   ========================================================================= */
+
+const GROUP_NAME = "Deva Ni Shari Cha Maharaja";
+const GROUP_ID = "deva-ni-shari-cha-maharaja";
+let members = [];
+let expenses = [];
+let activity = [];
+let currentUser = null;
+let unsubMembers = null, unsubExpenses = null, unsubActivity = null;
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+// Local files (file://) often can't use IndexedDB, which Firebase Auth needs
+// for its normal "remember me" storage. Using NONE avoids that entirely —
+// it just means you'll need to sign in again each time you reopen the file.
+auth.setPersistence(firebase.auth.Auth.Persistence.NONE).catch(()=>{});
+
+function fmtRs(n){ return "₹" + Number(n||0).toLocaleString('en-IN'); }
+function normalizePhone(p){ let d = (p||'').replace(/[^0-9]/g,''); if(d.length === 10) d = '91' + d; return d; }
+function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+// ---------- Tabs ----------
+let devUnlocked = false;
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    if(btn.dataset.tab === 'activity' && !devUnlocked){
+      document.getElementById('devPassField').value = '';
+      document.getElementById('devGateError').textContent = '';
+      document.getElementById('devGateModal').classList.add('open');
+      return;
+    }
+    openTab(btn.dataset.tab);
+  });
+});
+function openTab(tab){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelector(`.tab-btn[data-tab="${tab}"]`).classList.add('active');
+  document.getElementById('panel-'+tab).classList.add('active');
+}
+document.getElementById('devGateCancel').addEventListener('click', ()=> document.getElementById('devGateModal').classList.remove('open'));
+document.getElementById('devGateSubmit').addEventListener('click', ()=>{
+  if(document.getElementById('devPassField').value === DEVELOPER_PASSWORD){
+    devUnlocked = true;
+    document.getElementById('activityTabBtn').textContent = 'Activity Log';
+    document.getElementById('devGateModal').classList.remove('open');
+    openTab('activity');
+  } else {
+    document.getElementById('devGateError').textContent = 'Wrong password.';
+  }
+});
+
+// ---------- Auth ----------
+const loginScreen = document.getElementById('loginScreen');
+const app = document.getElementById('app');
+const loginError = document.getElementById('loginError');
+const emailField = document.getElementById('authEmail');
+const passField = document.getElementById('authPassword');
+
+document.getElementById('forgotLink').addEventListener('click', async (e)=>{
+  e.preventDefault();
+  const email = emailField.value.trim();
+  if(!email){ loginError.textContent = 'Enter your email above first.'; return; }
+  try{
+    await auth.sendPasswordResetEmail(email);
+    loginError.style.color = 'var(--paid)';
+    loginError.textContent = 'Reset link sent — check your inbox.';
+  }catch(err){ loginError.style.color = 'var(--pending)'; loginError.textContent = err.message; }
+});
+
+document.getElementById('signInBtn').addEventListener('click', async ()=>{
+  const email = emailField.value.trim();
+  const pass = passField.value;
+  if(!email || pass.length < 6){ loginError.textContent = 'Enter a valid email and password.'; return; }
+  loginError.style.color = 'var(--pending)'; loginError.textContent = '';
+  try{
+    await auth.signInWithEmailAndPassword(email, pass);
+  }catch(err){ loginError.textContent = err.message; }
+});
+
+document.getElementById('logoutBtn').addEventListener('click', ()=> auth.signOut());
+
+auth.onAuthStateChanged(user=>{
+  if(user && !ADMIN_EMAILS.includes(user.email)){
+    loginError.textContent = 'This account is not an approved admin for this group.';
+    auth.signOut();
+    return;
+  }
+  currentUser = user;
+  if(user){
+    loginScreen.style.display = 'none';
+    app.style.display = 'block';
+    document.getElementById('whoAmI').textContent = 'Signed in as ' + user.email;
+    startListening();
+    startCountdown();
+  } else {
+    if(unsubMembers) unsubMembers();
+    if(unsubExpenses) unsubExpenses();
+    if(unsubActivity) unsubActivity();
+    loginScreen.style.display = 'flex';
+    app.style.display = 'none';
+    members = []; expenses = []; activity = [];
+  }
+});
+
+// ---------- Firestore refs ----------
+function groupDoc(){ return db.collection('groups').doc(GROUP_ID); }
+function membersCol(){ return groupDoc().collection('members'); }
+function expensesCol(){ return groupDoc().collection('expenses'); }
+function activityCol(){ return groupDoc().collection('activity'); }
+
+function showGlobalError(err, context){
+  const el = document.getElementById('globalError');
+  let hint = '';
+  if(err && err.code === 'permission-denied'){
+    hint = ' → Your Firestore security rules are not published yet (or don\'t match your admin email). Firebase console → Firestore Database → Rules tab → paste the rules → Publish.';
+  } else if(err && (err.code === 'not-found' || /database.*does not exist/i.test(err.message||''))){
+    hint = ' → No Firestore Database exists yet in this project. In Firebase console go to Build → Firestore Database (NOT Realtime Database — they are different products) → Create database.';
+  } else if(err && err.code === 'unauthenticated'){
+    hint = ' → You got signed out. Please sign in again.';
+  }
+  el.textContent = `${context}: ${err ? err.message : 'unknown error'}${hint}`;
+  el.style.display = 'block';
+}
+
+function startListening(){
+  unsubMembers = membersCol().onSnapshot(snap=>{
+    members = snap.docs.map(d=>({ id:d.id, ...d.data() }));
+    renderAll();
+    document.getElementById('syncNote').textContent = 'Synced — visible to both admins instantly.';
+  }, err=>{ showGlobalError(err, 'Members sync error'); });
+
+  unsubExpenses = expensesCol().onSnapshot(snap=>{
+    expenses = snap.docs.map(d=>({ id:d.id, ...d.data() }));
+    renderAll();
+  }, err=>{ showGlobalError(err, 'Expenses sync error'); });
+
+  unsubActivity = activityCol().orderBy('at','desc').limit(200).onSnapshot(snap=>{
+    activity = snap.docs.map(d=>({ id:d.id, ...d.data() }));
+    renderAll();
+  }, err=>{ showGlobalError(err, 'Activity log sync error'); });
+}
+
+// ---------- Activity logging ----------
+async function logActivity(action, entity, entityId, entityName, before, after){
+  try{
+    await activityCol().add({
+      action, entity, entityId, entityName,
+      before: before || null,
+      after: after || null,
+      by: currentUser.email,
+      at: firebase.firestore.FieldValue.serverTimestamp(),
+      undone: false
+    });
+  }catch(e){ showGlobalError(e, 'Activity log entry failed to save (the member/expense itself still saved fine)'); }
+}
+
+async function undoActivity(logId){
+  const log = activity.find(a=>a.id===logId);
+  if(!log || log.undone) return;
+  if(!confirm('Undo this change?')) return;
+  try{
+    const col = log.entity === 'member' ? membersCol() : expensesCol();
+    if(log.action === 'add'){
+      await col.doc(log.entityId).delete();
+    } else if(log.action === 'edit'){
+      await col.doc(log.entityId).set(log.before);
+    } else if(log.action === 'delete'){
+      await col.doc(log.entityId).set(log.before);
+    }
+    await activityCol().doc(logId).update({ undone: true });
+  }catch(err){
+    alert('Could not undo: ' + err.message);
+  }
+}
+window.undoActivity = undoActivity;
+
+// ---------- Rendering ----------
+function renderSummary(){
+  const totalPledged = members.reduce((s,m)=>s+Number(m.pledged||0),0);
+  const totalPaid = members.reduce((s,m)=>s+Number(m.paid||0),0);
+  const totalExpenses = expenses.reduce((s,e)=>s+Number(e.amount||0),0);
+  const netBalance = totalPaid - totalExpenses;
+  const pendingCount = members.filter(m=>Number(m.paid||0) < Number(m.pledged||0)).length;
+  document.getElementById('summaryGrid').innerHTML = `
+    <div class="sum-card accent"><div class="val">${fmtRs(totalPaid)}</div><div class="lbl">Collected</div></div>
+    <div class="sum-card"><div class="val">${fmtRs(totalPledged)}</div><div class="lbl">Total pledged</div></div>
+    <div class="sum-card warn"><div class="val">${fmtRs(totalExpenses)}</div><div class="lbl">Total expenses</div></div>
+    <div class="sum-card net"><div class="val">${fmtRs(netBalance)}</div><div class="lbl">Cash in hand</div></div>
+    <div class="sum-card"><div class="val">${members.length}</div><div class="lbl">Members</div></div>
+    <div class="sum-card"><div class="val">${pendingCount}</div><div class="lbl">Pending / partial</div></div>
+  `;
+}
+function statusOf(m){
+  const paid = Number(m.paid||0), pledged = Number(m.pledged||0);
+  if(pledged>0 && paid>=pledged) return {cls:'paid', label:'Paid'};
+  if(paid>0) return {cls:'partial', label:'Partial'};
+  return {cls:'pending', label:'Pending'};
+}
+function reminderMessage(m){
+  const bal = Number(m.pledged||0) - Number(m.paid||0);
+  return `Ganpati Bappa Morya 🙏 ${m.name}, this is a reminder from ${GROUP_NAME} for the Ganpati Utsav collection. Your pledged amount is ${fmtRs(m.pledged)}, paid so far ${fmtRs(m.paid)}, balance ${fmtRs(bal>0?bal:0)}. Kindly clear it at your convenience. Thank you!`;
+}
+function renderMembers(){
+  const list = document.getElementById('memberList');
+  if(members.length === 0){
+    list.innerHTML = `<div class="empty-state">No members yet. Tap "Add Member" to start collecting for ${GROUP_NAME}.</div>`;
+    return;
+  }
+  list.innerHTML = members.map(m=>{
+    const st = statusOf(m);
+    const bal = Number(m.pledged||0) - Number(m.paid||0);
+    const msg = encodeURIComponent(reminderMessage(m));
+    const phone = normalizePhone(m.phone);
+    const waLink = phone ? `https://wa.me/${phone}?text=${msg}` : null;
+    const smsLink = phone ? `sms:${m.phone}?&body=${msg}` : null;
+    const mailLink = m.email ? `mailto:${m.email}?subject=${encodeURIComponent('Ganpati Utsav Collection Reminder')}&body=${msg}` : null;
+    return `
+    <div class="member-card">
+      <div class="member-main">
+        <div class="nm">${escapeHtml(m.name)}</div>
+        <div class="contact">${m.phone ? escapeHtml(m.phone) : ''}${m.phone && m.email ? ' · ' : ''}${m.email ? escapeHtml(m.email) : ''}</div>
+        <span class="status-pill ${st.cls}">${st.label}</span>
+      </div>
+      <div class="member-money">
+        <div class="amt">${fmtRs(m.paid)}</div>
+        <div class="of">of ${fmtRs(m.pledged)}</div>
+        ${bal > 0 ? `<div class="bal due">Due ${fmtRs(bal)}</div>` : `<div class="bal clear">Cleared</div>`}
+      </div>
+      <div class="member-actions">
+        ${waLink ? `<a class="icon-btn" href="${waLink}" target="_blank" rel="noopener">💬 WhatsApp</a>` : ''}
+        ${smsLink ? `<a class="icon-btn" href="${smsLink}">✉ SMS</a>` : ''}
+        ${mailLink ? `<a class="icon-btn" href="${mailLink}">📧 Email</a>` : ''}
+        <button class="icon-btn" onclick="editMember('${m.id}')">✎ Edit</button>
+        <button class="icon-btn danger" onclick="deleteMember('${m.id}')">🗑 Delete</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function renderExpenses(){
+  const list = document.getElementById('expenseList');
+  if(expenses.length === 0){
+    list.innerHTML = `<div class="empty-state">No expenses logged yet. Tap "Add Expense" to record festival spending.</div>`;
+    return;
+  }
+  const sorted = [...expenses].sort((a,b)=> (b.date||'').localeCompare(a.date||''));
+  list.innerHTML = sorted.map(e=>`
+    <div class="expense-row">
+      <div class="expense-main">
+        <div class="et">${escapeHtml(e.title)}</div>
+        <div class="ed">${e.date ? e.date : ''}${e.category ? ' · ' + escapeHtml(e.category) : ''}${e.notes ? ' · ' + escapeHtml(e.notes) : ''}</div>
+      </div>
+      <div class="expense-amt">− ${fmtRs(e.amount)}</div>
+      <div class="expense-acts">
+        <button class="icon-btn" onclick="editExpense('${e.id}')">✎ Edit</button>
+        <button class="icon-btn danger" onclick="deleteExpense('${e.id}')">🗑 Delete</button>
+      </div>
+    </div>`).join('');
+}
+function describeActivity(a){
+  const who = `<b>${escapeHtml((a.by||'').split('@')[0])}</b>`;
+  const what = a.entity === 'member' ? 'member' : 'expense';
+  const name = escapeHtml(a.entityName || '');
+  if(a.action === 'add') return `${who} added ${what} "${name}"`;
+  if(a.action === 'delete') return `${who} deleted ${what} "${name}"`;
+  if(a.action === 'edit') return `${who} edited ${what} "${name}"`;
+  return `${who} changed ${what} "${name}"`;
+}
+function renderActivity(){
+  const list = document.getElementById('activityList');
+  if(activity.length === 0){
+    list.innerHTML = `<div class="empty-state">No activity yet. Every add, edit, and delete will show up here.</div>`;
+    return;
+  }
+  list.innerHTML = activity.map(a=>{
+    const when = a.at && a.at.toDate ? a.at.toDate().toLocaleString('en-IN', {dateStyle:'medium', timeStyle:'short'}) : 'just now';
+    const canUndo = !a.undone && (a.action === 'add' || a.before);
+    return `
+    <div class="activity-row ${a.undone?'undone':''}">
+      <div class="activity-main">
+        <div class="at">${when}</div>
+        <div class="desc">${describeActivity(a)}</div>
+      </div>
+      <span class="activity-tag">${a.action}${a.undone ? ' · undone' : ''}</span>
+      ${canUndo ? `<button class="icon-btn" onclick="undoActivity('${a.id}')">↺ Undo</button>` : ''}
+    </div>`;
+  }).join('');
+}
+function renderAll(){ renderSummary(); renderMembers(); renderExpenses(); renderActivity(); }
+
+// ---------- Member CRUD ----------
+const memberModal = document.getElementById('memberModal');
+const modalTitle = document.getElementById('modalTitle');
+document.getElementById('addBtn').addEventListener('click', ()=>{
+  document.getElementById('memberId').value = '';
+  document.getElementById('fName').value = '';
+  document.getElementById('fPhone').value = '';
+  document.getElementById('fEmail').value = '';
+  document.getElementById('fPledged').value = '';
+  document.getElementById('fPaid').value = '';
+  document.getElementById('memberFormError').textContent = '';
+  modalTitle.textContent = 'Add Member';
+  memberModal.classList.add('open');
+});
+document.getElementById('cancelBtn').addEventListener('click', ()=> memberModal.classList.remove('open'));
+document.getElementById('saveBtn').addEventListener('click', async ()=>{
+  const errEl = document.getElementById('memberFormError');
+  errEl.textContent = '';
+  if(!currentUser){ errEl.textContent = 'You are signed out — please sign in again.'; return; }
+  const id = document.getElementById('memberId').value;
+  const name = document.getElementById('fName').value.trim();
+  if(!name){ errEl.textContent = 'Please enter a name.'; return; }
+  const data = {
+    name,
+    phone: document.getElementById('fPhone').value.trim(),
+    email: document.getElementById('fEmail').value.trim(),
+    pledged: Number(document.getElementById('fPledged').value || 0),
+    paid: Number(document.getElementById('fPaid').value || 0),
+  };
+  try{
+    if(id){
+      const before = members.find(x=>x.id===id);
+      await membersCol().doc(id).update(data);
+      await logActivity('edit', 'member', id, data.name, before ? {...before} : null, null);
+    } else {
+      const ref = await membersCol().add(data);
+      await logActivity('add', 'member', ref.id, data.name, null, null);
+    }
+    memberModal.classList.remove('open');
+  }catch(err){
+    errEl.textContent = 'Could not save: ' + err.message +
+      (err.code === 'permission-denied' ? ' — your Firestore rules or admin email setup likely need finishing.' : '');
+  }
+});
+function editMember(id){
+  const m = members.find(x=>x.id===id);
+  if(!m) return;
+  document.getElementById('memberId').value = m.id;
+  document.getElementById('fName').value = m.name;
+  document.getElementById('fPhone').value = m.phone || '';
+  document.getElementById('fEmail').value = m.email || '';
+  document.getElementById('fPledged').value = m.pledged || 0;
+  document.getElementById('fPaid').value = m.paid || 0;
+  modalTitle.textContent = 'Edit Member';
+  memberModal.classList.add('open');
+}
+async function deleteMember(id){
+  if(!confirm('Remove this member from the list?')) return;
+  try{
+    const before = members.find(x=>x.id===id);
+    await membersCol().doc(id).delete();
+    await logActivity('delete', 'member', id, before ? before.name : '', before ? {...before} : null, null);
+  }catch(err){ alert('Could not delete: ' + err.message); }
+}
+window.editMember = editMember;
+window.deleteMember = deleteMember;
+
+// ---------- Expense CRUD ----------
+const expenseModal = document.getElementById('expenseModal');
+const expModalTitle = document.getElementById('expModalTitle');
+document.getElementById('addExpBtn').addEventListener('click', ()=>{
+  document.getElementById('expId').value = '';
+  document.getElementById('eTitle').value = '';
+  document.getElementById('eAmount').value = '';
+  document.getElementById('eDate').value = new Date().toISOString().slice(0,10);
+  document.getElementById('eCategory').value = '';
+  document.getElementById('eNotes').value = '';
+  document.getElementById('expenseFormError').textContent = '';
+  expModalTitle.textContent = 'Add Expense';
+  expenseModal.classList.add('open');
+});
+document.getElementById('expCancelBtn').addEventListener('click', ()=> expenseModal.classList.remove('open'));
+document.getElementById('expSaveBtn').addEventListener('click', async ()=>{
+  const errEl = document.getElementById('expenseFormError');
+  errEl.textContent = '';
+  if(!currentUser){ errEl.textContent = 'You are signed out — please sign in again.'; return; }
+  const id = document.getElementById('expId').value;
+  const title = document.getElementById('eTitle').value.trim();
+  if(!title){ errEl.textContent = 'Please enter a title.'; return; }
+  const data = {
+    title,
+    amount: Number(document.getElementById('eAmount').value || 0),
+    date: document.getElementById('eDate').value,
+    category: document.getElementById('eCategory').value.trim(),
+    notes: document.getElementById('eNotes').value.trim(),
+  };
+  try{
+    if(id){
+      const before = expenses.find(x=>x.id===id);
+      await expensesCol().doc(id).update(data);
+      await logActivity('edit', 'expense', id, data.title, before ? {...before} : null, null);
+    } else {
+      const ref = await expensesCol().add(data);
+      await logActivity('add', 'expense', ref.id, data.title, null, null);
+    }
+    expenseModal.classList.remove('open');
+  }catch(err){
+    errEl.textContent = 'Could not save: ' + err.message +
+      (err.code === 'permission-denied' ? ' — your Firestore rules or admin email setup likely need finishing.' : '');
+  }
+});
+function editExpense(id){
+  const e = expenses.find(x=>x.id===id);
+  if(!e) return;
+  document.getElementById('expId').value = e.id;
+  document.getElementById('eTitle').value = e.title;
+  document.getElementById('eAmount').value = e.amount || 0;
+  document.getElementById('eDate').value = e.date || '';
+  document.getElementById('eCategory').value = e.category || '';
+  document.getElementById('eNotes').value = e.notes || '';
+  expModalTitle.textContent = 'Edit Expense';
+  expenseModal.classList.add('open');
+}
+async function deleteExpense(id){
+  if(!confirm('Remove this expense?')) return;
+  try{
+    const before = expenses.find(x=>x.id===id);
+    await expensesCol().doc(id).delete();
+    await logActivity('delete', 'expense', id, before ? before.title : '', before ? {...before} : null, null);
+  }catch(err){ alert('Could not delete: ' + err.message); }
+}
+window.editExpense = editExpense;
+window.deleteExpense = deleteExpense;
+
+// ---------- Export to Excel ----------
+document.getElementById('exportBtn').addEventListener('click', ()=>{
+  if(typeof XLSX === 'undefined'){ alert('Excel library did not load — check your connection and try again.'); return; }
+  const rows = members.map(m=>({
+    'Name': m.name, 'Phone': m.phone || '', 'Email': m.email || '',
+    'Pledged (₹)': Number(m.pledged||0), 'Paid (₹)': Number(m.paid||0),
+    'Balance (₹)': Number(m.pledged||0) - Number(m.paid||0), 'Status': statusOf(m).label
+  }));
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = [{wch:22},{wch:16},{wch:24},{wch:12},{wch:12},{wch:12},{wch:10}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Collection");
+  XLSX.writeFile(wb, `${GROUP_NAME.replace(/\s+/g,'_')}_Members.xlsx`);
+});
+document.getElementById('exportExpBtn').addEventListener('click', ()=>{
+  if(typeof XLSX === 'undefined'){ alert('Excel library did not load — check your connection and try again.'); return; }
+  const rows = expenses.map(e=>({
+    'Title': e.title, 'Date': e.date || '', 'Category': e.category || '',
+    'Amount (₹)': Number(e.amount||0), 'Notes': e.notes || ''
+  }));
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = [{wch:24},{wch:12},{wch:16},{wch:12},{wch:28}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Expenses");
+  XLSX.writeFile(wb, `${GROUP_NAME.replace(/\s+/g,'_')}_Expenses.xlsx`);
+});
+
+// ---------- Countdown ----------
+function getNextGanpati(){
+  const dates = [ new Date(2026,8,14,0,0,0), new Date(2027,7,14,0,0,0) ];
+  const now = new Date();
+  return dates.find(d=>d.getTime() > now.getTime()) || dates[dates.length-1];
+}
+function startCountdown(){
+  const target = getNextGanpati();
+  document.getElementById('cdDate').textContent = target.toLocaleDateString('en-IN', { day:'numeric', month:'long', year:'numeric' });
+  function tick(){
+    const now = new Date();
+    let diff = Math.max(0, target - now);
+    const days = Math.floor(diff/(1000*60*60*24));
+    const hours = Math.floor((diff/(1000*60*60))%24);
+    const mins = Math.floor((diff/(1000*60))%60);
+    const secs = Math.floor((diff/1000)%60);
+    document.getElementById('cdNums').innerHTML = `
+      <div class="unit"><span class="n">${days}</span><span class="u">days</span></div>
+      <div class="unit"><span class="n">${hours}</span><span class="u">hrs</span></div>
+      <div class="unit"><span class="n">${mins}</span><span class="u">min</span></div>
+      <div class="unit"><span class="n">${secs}</span><span class="u">sec</span></div>
+    `;
+  }
+  tick();
+  setInterval(tick, 1000);
+}
+
+// ---------- Calendar strip ----------
+function renderCalendar(){
+  const start = new Date(2026,8,14);
+  const today = new Date();
+  const labels = ['Sthapana','','','','','','','','','Visarjan*'];
+  let html = '';
+  for(let i=0;i<10;i++){
+    const d = new Date(start); d.setDate(start.getDate()+i);
+    const isToday = d.toDateString() === today.toDateString();
+    const hasMarker = labels[i];
+    html += `<div class="cal-day ${hasMarker?'marker':''} ${isToday?'today':''}">
+      <div class="dow">${d.toLocaleDateString('en-IN',{weekday:'short'})}</div>
+      <div class="dnum">${d.getDate()}</div>
+      ${hasMarker ? `<span class="tag">${hasMarker}</span>` : `<span class="tag">&nbsp;</span>`}
+    </div>`;
+  }
+  document.getElementById('calDays').innerHTML = html;
+}
+renderCalendar();
+</script>
+</body>
+</html>
